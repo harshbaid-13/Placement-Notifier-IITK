@@ -15,6 +15,7 @@ NOTICE_URL = "https://placement.iitk.ac.in/api/student/rc/14/notice"
 USERNAME = os.getenv("EMAIL", "Harsh")
 PASSWORD = os.getenv("PASSWORD", "Baid")
 SERVER_NAME = os.getenv("SERVER_NAME", "iitk-placement-2025")
+print("Hello, ", USERNAME)
 
 def login():
     res = requests.post(LOGIN_URL, json={"user_id": USERNAME, "password": PASSWORD})
@@ -80,6 +81,7 @@ def main():
         seen_ids = set(json.load(open("seen.json")))
 
     while True:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] INFO: Fetching latest notices...")
         try:
             notices = get_notices(token)
             recent_notices = [n for n in notices if is_recent_notice(n.get("UpdatedAt", ""))]
@@ -94,7 +96,6 @@ def main():
 
             json.dump(list(seen_ids), open("seen.json", "w"))
             time.sleep(30 * 60)
-            
         except Exception as e:
             print(f"Error in main loop: {e}")
             time.sleep(60)
