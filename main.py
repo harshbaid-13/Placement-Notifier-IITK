@@ -7,6 +7,10 @@ import html
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
+class TokenExpiredError(Exception):
+    """Raised when the authentication token has expired"""
+    pass
+
 load_dotenv()
 
 LOGIN_URL = "https://placement.iitk.ac.in/api/auth/login"
@@ -19,11 +23,18 @@ print("Hello, ", USERNAME)
 
 def login():
     res = requests.post(LOGIN_URL, json={"user_id": USERNAME, "password": PASSWORD})
+    res.raise_for_status()  # Raise exception for HTTP errors
     return res.json()["token"]
 
 def get_notices(token):
     headers = {"Authorization": f"Bearer {token}"}
     res = requests.get(NOTICE_URL, headers=headers)
+    
+    # Check if token is expired (401 Unauthorized)
+    if res.status_code == 401:
+        raise TokenExpiredError("Token has expired")
+    
+    res.raise_for_status()  # Raise exception for other HTTP errors
     return res.json()
 
 def clean_html_text(text):
@@ -96,8 +107,16 @@ def main():
 
             json.dump(list(seen_ids), open("seen.json", "w"))
             time.sleep(30 * 60)
+        except TokenExpiredError:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] WARNING: Token expired, re-authenticating...")
+            try:
+                token = login()
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] INFO: Successfully re-authenticated")
+            except Exception as login_error:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR: Failed to re-authenticate: {login_error}")
+                time.sleep(60)
         except Exception as e:
-            print(f"Error in main loop: {e}")
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR: {e}")
             time.sleep(60)
 
 if __name__ == "__main__":
