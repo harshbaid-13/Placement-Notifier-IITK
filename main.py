@@ -97,7 +97,7 @@ def main():
             notices = get_notices(token)
             recent_notices = [n for n in notices if is_recent_notice(n.get("UpdatedAt", ""))]
             new_recent = [n for n in recent_notices if n["ID"] not in seen_ids]
-
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] INFO: No. of new recent notices: {len(new_recent)}")
             for n in new_recent:
                 clean_desc = clean_html_text(n.get('description', ''))
                 readable_time = format_timestamp(n['UpdatedAt'])
